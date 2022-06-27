@@ -503,6 +503,7 @@ AdminHandler::AdminHandler(
   // Initialize the atomic int variables
   num_current_s3_sst_downloadings_.store(0);
   num_current_s3_sst_uploadings_.store(0);
+  initS3Tmp();
 }
 
 AdminHandler::~AdminHandler() {
@@ -2180,6 +2181,20 @@ std::string AdminHandler::DumpDBStatsAsText() const {
 
 std::vector<std::string> AdminHandler::getAllDBNames() {
     return db_manager_->getAllDBNames();
+}
+
+void AdminHandler::initS3Tmp() {
+  auto s3_path = folly::stringPrintf("%ss3_tmp/", FLAGS_rocksdb_dir.c_str());
+  boost::system::error_code remove_err;
+  boost::filesystem::remove_all(s3_path, remove_err);
+  if (remove_err) {
+    LOG(ERROR) << "Failed to cleanup s3_tmp directory: " << s3_path << ": " << remove_err.message();
+  }
+  boost::system::error_code create_err;
+  boost::filesystem::create_directories(s3_path, create_err);
+  if (create_err) {
+    LOG(ERROR) << "Failed to create dir: " << s3_path << ": " << create_err.message();
+  }
 }
 
 }  // namespace admin
